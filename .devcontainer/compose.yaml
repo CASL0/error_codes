@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  app:
+    container_name: error_codes
+    image: mcr.microsoft.com/devcontainers/python:0-3.11
+    tty: true
+    working_dir: /opt/app
+    volumes:
+      - ..:/opt/app:delegated
