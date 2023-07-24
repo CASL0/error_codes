@@ -1,0 +1,25 @@
+name: run
+on:
+  push:
+    paths:
+      - "**.py"
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Python
+        run: python app.py
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: windows_system_errors.json
