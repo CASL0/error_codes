@@ -6,6 +6,7 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout
+from dataclasses_json import dataclass_json
 
 
 @dataclass
@@ -15,6 +16,14 @@ class ErrorDetail:
     code: int
     alias: str
     description: str
+
+
+@dataclass_json
+@dataclass
+class ErrorDetails:
+    """エラーリスト"""
+
+    errors: list[ErrorDetail]
 
 
 def main():
@@ -49,10 +58,14 @@ def collect_windows_system_error_codes():
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--9000-11999-",
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--12000-15999-",
     ]
-    error_codes: list[ErrorDetail] = []
+    error_codes = ErrorDetails(errors=[])
     for url in urls:
         parsed_codes = parse_doc(url)
-        error_codes.extend(parsed_codes)
+        error_codes.errors.extend(parsed_codes)
+    with open(
+        "windows_system_errors.json", "w", encoding="utf-8", newline="\n"
+    ) as file:
+        file.write(error_codes.to_json(indent=2, ensure_ascii=False))
 
 
 def parse_doc(url: str) -> list[ErrorDetail]:
