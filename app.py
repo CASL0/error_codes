@@ -30,6 +30,7 @@ def main():
     """エントリーポイント"""
     try:
         collect_windows_system_error_codes()
+        collect_linux_system_error_codes()
     except ConnectionError as error:
         logging.error(error)
         sys.exit(1)
@@ -44,7 +45,7 @@ def main():
         sys.exit(1)
 
 
-def collect_error_codes(urls: list[str], parser: callable):
+def collect_error_codes(urls: list[str], parser: callable, file_name: str):
     """指定のURLのページをパースし、エラーコードの一覧を取得します
 
     Args:
@@ -55,10 +56,37 @@ def collect_error_codes(urls: list[str], parser: callable):
     for url in urls:
         parsed_codes = parser(url)
         error_codes.errors.extend(parsed_codes)
-    with open(
-        "windows_system_errors.json", "w", encoding="utf-8", newline="\n"
-    ) as file:
+    with open(file_name, "w", encoding="utf-8", newline="\n") as file:
         file.write(error_codes.to_json(indent=2, ensure_ascii=False))
+
+
+def collect_linux_system_error_codes():
+    """LinuxのシステムエラーコードをJSON出力"""
+    urls: list[str] = ["https://www.thegeekstuff.com/2010/10/linux-error-codes/"]
+    collect_error_codes(urls=urls, parser=parse_linux_doc, file_name="errno.json")
+
+
+def parse_linux_doc(url: str) -> list[ErrorDetail]:
+    """LinuxエラーコードのWebページのスクレイピング
+
+    Args:
+        url (str): エラーコードのページURL
+
+    Returns:
+        list[ErrorDetail]: ページ解析結果のエラーリスト
+    """
+    res = requests.get(url=url, timeout=(30, 30))
+    soup = BeautifulSoup(res.text, "html.parser")
+    table_elem = soup.find("table", id="optiontable")
+    error_codes: list[ErrorDetail] = []
+    for i, elem in enumerate(table_elem.tbody.find_all("tr", recursive=False)):
+        if i == 0 or i == 1:
+            continue
+        tds = elem.find_all("td")
+        error_codes.append(
+            ErrorDetail(code=tds[0].text, alias=tds[1].text, description=tds[2].text)
+        )
+    return error_codes
 
 
 def collect_windows_system_error_codes():
@@ -75,11 +103,13 @@ def collect_windows_system_error_codes():
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--9000-11999-",
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--12000-15999-",
     ]
-    collect_error_codes(urls=urls, parser=parse_windows_doc)
+    collect_error_codes(
+        urls=urls, parser=parse_windows_doc, file_name="windows_system_errors.json"
+    )
 
 
 def parse_windows_doc(url: str) -> list[ErrorDetail]:
-    """エラーコードのWebページのスクレイピング
+    """WindowsエラーコードのWebページのスクレイピング
 
     Args:
         url (str): エラーコードのページURL
