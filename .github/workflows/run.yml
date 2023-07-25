@@ -22,4 +22,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          path: windows_system_errors.json
+          path: |
+            windows_system_errors.json
+            errno.json
