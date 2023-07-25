@@ -44,6 +44,23 @@ def main():
         sys.exit(1)
 
 
+def collect_error_codes(urls: list[str], parser: callable):
+    """指定のURLのページをパースし、エラーコードの一覧を取得します
+
+    Args:
+        urls (list[str]): URLのリスト
+        parser (callable): Webページのパーサー
+    """
+    error_codes = ErrorDetails(errors=[])
+    for url in urls:
+        parsed_codes = parser(url)
+        error_codes.errors.extend(parsed_codes)
+    with open(
+        "windows_system_errors.json", "w", encoding="utf-8", newline="\n"
+    ) as file:
+        file.write(error_codes.to_json(indent=2, ensure_ascii=False))
+
+
 def collect_windows_system_error_codes():
     """WindowsのシステムエラーコードをJSON出力"""
     urls: list[str] = [
@@ -58,17 +75,10 @@ def collect_windows_system_error_codes():
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--9000-11999-",
         "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--12000-15999-",
     ]
-    error_codes = ErrorDetails(errors=[])
-    for url in urls:
-        parsed_codes = parse_doc(url)
-        error_codes.errors.extend(parsed_codes)
-    with open(
-        "windows_system_errors.json", "w", encoding="utf-8", newline="\n"
-    ) as file:
-        file.write(error_codes.to_json(indent=2, ensure_ascii=False))
+    collect_error_codes(urls=urls, parser=parse_windows_doc)
 
 
-def parse_doc(url: str) -> list[ErrorDetail]:
+def parse_windows_doc(url: str) -> list[ErrorDetail]:
     """エラーコードのWebページのスクレイピング
 
     Args:
@@ -86,7 +96,7 @@ def parse_doc(url: str) -> list[ErrorDetail]:
         description_elements = elem.find_next_sibling("dd").dl.find_all("dt")
         error_codes.append(
             ErrorDetail(
-                code=convert_error_codes(description_elements[0].p.text),
+                code=convert_windows_error_codes(description_elements[0].p.text),
                 alias=alias,
                 description=description_elements[1].p.text,
             )
@@ -94,7 +104,7 @@ def parse_doc(url: str) -> list[ErrorDetail]:
     return error_codes
 
 
-def convert_error_codes(error_codes: str) -> int:
+def convert_windows_error_codes(error_codes: str) -> int:
     """エラーコードを数値だけ抽出する
 
     Args:
