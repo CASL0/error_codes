@@ -84,7 +84,9 @@ def parse_linux_doc(url: str) -> list[ErrorDetail]:
             continue
         tds = elem.find_all("td")
         error_codes.append(
-            ErrorDetail(code=tds[0].text, alias=tds[1].text, description=tds[2].text)
+            ErrorDetail(
+                code=int(tds[0].text), alias=tds[1].text, description=tds[2].text
+            )
         )
     return error_codes
 
