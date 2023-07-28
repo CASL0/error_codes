@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import logging
 import sys
+import re
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import RequestException, ConnectionError, HTTPError, Timeout
@@ -31,6 +32,7 @@ def main():
     try:
         collect_windows_system_error_codes()
         collect_linux_system_error_codes()
+        collect_curl_error_codes()
     except ConnectionError as error:
         logging.error(error)
         sys.exit(1)
@@ -58,6 +60,37 @@ def collect_error_codes(urls: list[str], parser: callable, file_name: str):
         error_codes.errors.extend(parsed_codes)
     with open(file_name, "w", encoding="utf-8", newline="\n") as file:
         file.write(error_codes.to_json(indent=2, ensure_ascii=False))
+
+
+def collect_curl_error_codes():
+    """cURLのエラーコードをJSON出力"""
+    urls: list[str] = ["https://curl.se/libcurl/c/libcurl-errors.html"]
+    collect_error_codes(urls=urls, parser=parse_curl_doc, file_name="curl_errors.json")
+
+
+def parse_curl_doc(url: str) -> list[ErrorDetail]:
+    """cURLエラーコードのWebページのスクレイピング
+
+    Args:
+        url (str): エラーコードのページURL
+
+    Returns:
+        list[ErrorDetail]: ページ解析結果のエラーリスト
+    """
+    res = requests.get(url=url, timeout=(30, 30))
+    soup = BeautifulSoup(res.text, "html.parser")
+    error_elements = soup.find_all("span", string=re.compile(r"^CURLE.+\(\d+\)$"))
+    error_codes: list[ErrorDetail] = []
+    for elem in error_elements:
+        # ()内の数字を取り出す
+        tmp = re.search(r"\(\d+\)", elem.text).group()
+        code = re.search(r"\d+", tmp).group()
+        alias = re.search(r"^CURLE[_A-Z]+", elem.text).group()
+        description = elem.parent.find_next_sibling("p").text
+        error_codes.append(
+            ErrorDetail(code=int(code), alias=alias, description=description)
+        )
+    return error_codes
 
 
 def collect_linux_system_error_codes():

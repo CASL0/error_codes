@@ -1,5 +1,6 @@
 windows_system_errors.json
 errno.json
+curl_errors.json
 .DS_Store*
 Thumbs.db
 

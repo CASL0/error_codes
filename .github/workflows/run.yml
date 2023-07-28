@@ -25,3 +25,4 @@ jobs:
           path: |
             windows_system_errors.json
             errno.json
+            curl_errors.json
