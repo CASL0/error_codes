@@ -1,5 +1,7 @@
 # error_codes
 
+[![run](https://github.com/CASL0/error_codes/actions/workflows/run.yml/badge.svg)](https://github.com/CASL0/error_codes/actions/workflows/run.yml)
+
 エラーコードとその説明を JSON で出力します。
 
 ## 出力形式
